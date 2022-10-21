@@ -5,6 +5,8 @@ import time
 import hmac
 import hashlib
 from enum import Enum
+import json
+
 
 from datetime import datetime, timedelta
 
@@ -168,7 +170,106 @@ class BitforexRestApi(RestClient):
             return {}, -1  
   
 
+    def query_account_sync(self):
+        """"""
+        request, response = self.send_request_sync(
+            "POST",
+            "/api/v1/fund/allAccount"
+        )
+        if request.status == RequestStatus.success:
+            if response['success']:
+                return response, 0
+            else:
+                self.write_log(f"query  allAccount error:" + response['code'] + "-" + response['message'])
+                return {}, -1
+        else:
+            self.write_log(f"query allAccount failed:" + str(response))
+            return {}, -1  
     
+    def query_account_sync(self):
+        """"""
+        request, response = self.send_request_sync(
+            "POST",
+            "/api/v1/fund/allAccount"
+        )
+        if request.status == RequestStatus.success:
+            if response['success']:
+                return response, 0
+            else:
+                self.write_log(f"query  allAccount error:" + response['code'] + "-" + response['message'])
+                return {}, -1
+        else:
+            self.write_log(f"query allAccount failed:" + str(response))
+            return {}, -1  
+    
+    def query_single_account_sync(self, currency):
+        """"""
+        data = {
+            "currency":currency
+        }
+        request, response =  self.send_request_sync(
+            "POST",
+            "/api/v1/fund/mainAccount",
+            data=data          
+        )
+
+        if request.status == RequestStatus.success:
+            if response['success']:
+                return response, 0
+            else:
+                self.write_log(f"query {currency}  account error:" + response['code'] + "-" + response['message'])
+                return {}, -1
+        else:
+            self.write_log(f"query {currency} account failed:" + str(response))
+            return {}, -1  
+    
+
+    def query_order_sync(self, symbol, orderid):
+
+        data = {
+            "symbol": symbol,
+            "orderId": orderid
+        }
+
+        request, response = self.send_request_sync(
+            "POST",
+            "/api/v1/trade/orderInfo",
+            data=data
+        )
+        if request.status == RequestStatus.success:
+            if response['success']:
+                return response, 0
+            else:
+                self.write_log(f"query order {orderid}   error:" + response['code'] + "-" + response['message'])
+                return {}, -1
+        else:
+            self.write_log(f"query {orderid}  failed:" + str(response))
+            return {}, -1  
+
+
+    def query_multi_order_info_sync(self, symbol, orderIds):
+        
+        data = {
+            "symbol": symbol,
+            "orderIds": ','.join(map(str, orderIds))
+        }        
+        
+        request, response = self.send_request_sync(
+            "POST",
+            "/api/v1/trade/multiOrderInfo",
+            data=data
+        )
+        if request.status == RequestStatus.success:
+            if response['success']:
+                return response, 0
+            else:
+                self.write_log(f"query orders {str(orderIds)}   error:" + response['code'] + "-" + response['message'])
+                return {}, -1
+        else:
+            self.write_log(f"query orders {str(orderIds)}  failed:" + str(response))
+            return {}, -1  
+    
+
     def query_all_open_orders_sync(self, symbol):
         data = {
             "symbol":symbol,
@@ -191,4 +292,104 @@ class BitforexRestApi(RestClient):
             return {}, -1  
     
 
+    def send_order_sync(self, symbol, price, direction, amount):
+        """"""
+        data = {
+            "symbol": symbol,
+            "price": price,
+            "amount": amount,
+            "tradeType": direction,
+        }
+
+        request, response = self.send_request_sync(
+            "POST",
+            path="/api/v1/trade/placeOrder",
+            data=data
+        )
+
+        if request.status == RequestStatus.success:
+            if response['success']:
+                return response, 0
+            else:
+                self.write_log(f"send_orde {symbol}  error:" + response['code'] + "-" + response['message'])
+                return {}, -1
+        else:
+            self.write_log(f"send_orde {symbol} failed:" + str(response))
+            return {}, -1  
+
     
+
+    ################################################################
+    # orderInfos = []            
+    # d = {}
+    # d["price"] = float(row.price)
+    # d["amount"] = float(row.volume)
+    # d["tradeType"] = 2
+    # orderInfos.append(d)
+    ###
+    def send_multi_order(self, symbol, orderInfos):
+        data = {
+            "symbol": symbol,
+            "ordersData": json.dumps(orderInfos)
+        }
+
+        request, response = self.send_request_sync(
+            "POST",
+            path="/api/v1/trade/placeMultiOrder",
+            data=data
+        )
+        if request.status == RequestStatus.success:
+            if response['success']:
+                return response, 0
+            else:
+                self.write_log(f"send_multi_order {symbol}  error:" + response['code'] + "-" + response['message'])
+                return {}, -1
+        else:
+            self.write_log(f"send_multi_order {symbol} failed:" + str(response))
+            return {}, -1  
+
+
+    def cancel_order_sync(self, symbol, orderId):
+        data = {
+            "symbol": symbol,
+            "orderId": orderId       
+        }
+        
+        request, response =  self.send_request_sync(
+            "POST",
+            "/api/v1/trade/cancelOrder",
+            data=data 
+        )
+        if request.status == RequestStatus.success:
+            if response['success']:
+                return response, 0
+            else:
+                self.write_log(f"cancel_order_sync {symbol}, {orderId}  error:" + response['code'] + "-" + response['message'])
+                return {}, -1
+        else:
+            self.write_log(f"cancel_order_sync {symbol}, {orderId} failed:" + str(response))
+            return {}, -1  
+
+                  
+
+    def cancel_multi_order(self, symbol, orderIds):
+        data = {
+            "symbol": symbol,
+            "orderIds": ','.join(map(str, orderIds))
+        }
+        
+        request, response =  self.send_request_sync(
+            "POST",
+            "/api/v1/trade/cancelMultiOrder",
+            data=data
+        )
+    
+        if request.status == RequestStatus.success:
+            if response['success']:
+                return response, 0
+            else:
+                self.write_log(f"cancel_multi_order {symbol}, {str(orderIds)}  error:" + response['code'] + "-" + response['message'])
+                return {}, -1
+        else:
+            self.write_log(f"cancel_multi_order {symbol}, {str(orderIds)} failed:" + str(response))
+            return {}, -1  
